@@ -69,16 +69,45 @@ def _():
 
 
 @app.cell
-def _(DATA_DIR, eegbci, mne, run_ui, subject_ui):
-    files = eegbci.load_data(
-        subjects=subject_ui.value,
-        runs=[int(run_ui.value)],
-        path=DATA_DIR,
-        update_path=False,
+def _(DATA_DIR, eegbci, mne, mo, run_ui, subject_ui):
+    sub = int(subject_ui.value)
+    run = int(run_ui.value)
+
+    # Check if the file is already downloaded to local cache
+    cached_file = (
+        DATA_DIR
+        / "MNE-eegbci-data"
+        / "files"
+        / "eegmmidb"
+        / "1.0.0"
+        / f"S{sub:03d}"
+        / f"S{sub:03d}R{run:02d}.edf"
+    )
+    is_cached = cached_file.exists()
+
+    status_title = (
+        f"Loading cached S{sub:03d}R{run:02d}..."
+        if is_cached
+        else f"Downloading S{sub:03d}R{run:02d} from PhysioNet (~2.5 MB, may take a minute)..."
     )
 
-    # Parse raw EDF
-    raw = mne.io.read_raw_edf(files[0], preload=True)
+    with mo.status.spinner(title=status_title):
+        files = eegbci.load_data(
+            subjects=sub,
+            runs=[run],
+            path=DATA_DIR,
+            update_path=False,
+        )
+        # Parse raw EDF
+        raw = mne.io.read_raw_edf(files[0], preload=True)
+
+    mo.output.replace(
+        mo.md(
+            f"✓ **Loaded S{sub:03d}R{run:02d}.edf** "
+            f"({'from local cache' if is_cached else 'downloaded from PhysioNet'}) | "
+            f"**{raw.times[-1]:.1f}s** recording, **{len(raw.ch_names)} channels** @ **{raw.info['sfreq']:.0f} Hz**"
+        )
+    )
     return (raw,)
 
 
@@ -99,8 +128,7 @@ def _(eegbci, mne, plt, raw):
 
     # 2. Plot sensor locations
     fig = raw.plot_sensors(show_names=True, kind='topomap')
-    plt.show()
-    return
+    return (fig,)
 
 
 if __name__ == "__main__":
