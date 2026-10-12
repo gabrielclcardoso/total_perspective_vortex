@@ -21,7 +21,7 @@ visualize:
 	$(RUN) python -m tpv.visualize
 
 notebook:
-	$(RUN) --with jupyter jupyter lab notebooks/
+	$(RUN) marimo edit notebooks/
 
 clean:
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
