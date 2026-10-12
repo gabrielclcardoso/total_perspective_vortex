@@ -3,10 +3,13 @@ RUN ?= uv run
 SUBJECT ?= 1
 EXP_RUN ?= 4
 
-.PHONY: setup train predict evaluate visualize notebook clean fclean
+.PHONY: setup download train predict evaluate visualize notebook clean fclean
 
 setup:
 	uv sync
+
+download:
+	$(RUN) python -m tpv.download --subjects $(SUBJECT)
 
 train:
 	$(RUN) python mybci.py $(SUBJECT) $(EXP_RUN) train
