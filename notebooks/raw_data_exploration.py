@@ -40,6 +40,14 @@ def _(mo):
     return run_ui, subject_ui
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Data Loading
+    """)
+    return
+
+
 @app.cell
 def _(DATA_DIR, mo, run_ui, subject_ui):
     mo.md(f"""
@@ -47,14 +55,6 @@ def _(DATA_DIR, mo, run_ui, subject_ui):
     - **Subject:** S{subject_ui.value:03d}
     - **Run:** R{int(run_ui.value):02d}
     - **Data Directory:** `{DATA_DIR}`
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## Data visualization
     """)
     return
 
@@ -114,6 +114,14 @@ def _(DATA_DIR, download_run, eegbci, mne, mo, run_ui, subject_ui):
         )
     )
     return (raw,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Data visualization
+    """)
+    return
 
 
 @app.cell(hide_code=True)
