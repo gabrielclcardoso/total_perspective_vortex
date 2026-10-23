@@ -16,12 +16,11 @@ def _(mo):
     1. **Electrode Layout:** Mapping the 64 sensors on the scalp using the international 10–10 system (`colin27_1005` montage).
     2. **Zero-Phase Filtering (8.0 – 30.0 Hz):** Isolating the movement rhythms ($\mu$: 8–12 Hz and $\beta$: 13–30 Hz) while discarding slow eye blinks ($<8\text{ Hz}$) and muscle/powerline noise ($>30\text{ Hz}$).
     3. **Time-Domain Waveforms:** Side-by-side comparison of continuous voltage traces before and after filtering, overlaid with rest (`T0`) and movement cues (`T1`, `T2`).
-    4. **Frequency-Domain Spectrum (PSD):** Computing Power Spectral Density using Welch's averaged periodogram from scratch (NumPy FFT) to verify filter cutoffs.
+    4. **Frequency-Domain Spectrum (PSD):** Computing Power Spectral Density using Welch's averaged periodogram to verify filter cutoffs.
     5. **Epoch Extraction (Trial Segmentation):** Slicing continuous 2-minute streams into discrete, labeled 4-second trials around movement cues for classifier training.
     6. **Task-Specific Scalp Topography:** Mapping 2D head maps of $\mu$ and $\beta$ power during Task 1 vs. Task 2 on a shared scale, demonstrating that visual differences are too subtle to detect with the naked eye.
     7. **Left vs. Right Brain Response ($C3$ vs. $C4$ Spectra):** Inspecting the primary motor sensors to examine contralateral power drops, proving why machine learning (Phase 2: CSP) is necessary to decode movement thoughts.
     """)
-    return
 
 
 @app.cell
@@ -29,11 +28,11 @@ def _():
     import marimo as mo
     import matplotlib.pyplot as plt
     import mne
-    import mne.datasets.eegbci as eegbci
-    from mne.viz import plot_topomap
     import numpy as np
+    from mne.datasets import eegbci
+    from mne.viz import plot_topomap
 
-    from tpv.config import DATA_DIR, ROOT_DIR
+    from tpv.config import DATA_DIR
     from tpv.download import download_run
 
     return DATA_DIR, download_run, eegbci, mne, mo, np, plot_topomap, plt
@@ -66,7 +65,6 @@ def _(mo):
     ## Subject & Task Selection
     Select any of the 109 PhysioNet subjects and one of the 14 experimental runs.
     """)
-    return
 
 
 @app.cell
@@ -75,7 +73,9 @@ def _(TASK_DESCRIPTIONS, mo):
     subject_ui = mo.ui.number(start=1, stop=109, step=1, value=1, label="Subject ID")
     run_ui = mo.ui.dropdown(
         options=_options,
-        value=list(_options.keys())[3],  # Default to Run 4 (Task 2: Imagined Left/Right Fist)
+        value=list(_options.keys())[
+            3
+        ],  # Default to Run 4 (Task 2: Imagined Left/Right Fist)
         label="Run / Task",
     )
     mo.hstack([subject_ui, run_ui], justify="start", gap=2)
@@ -149,13 +149,11 @@ def _(mo):
     - **Cz**: Midline sensorimotor cortex (contralateral to feet)
     - Surrounding motor references: **FC3, FC4, CP3, CP4**
     """)
-    return
 
 
 @app.cell
 def _(raw):
-    fig_sensors = raw.plot_sensors(show_names=True, kind="topomap")
-    return
+    raw.plot_sensors(show_names=True, kind="topomap")
 
 
 @app.cell(hide_code=True)
@@ -177,13 +175,16 @@ def _(mo):
 
     > **In short:** The 8–30 Hz filter keeps the brain waves that reflect motor thoughts and throws away eye blinks, muscle twitches, and electrical hum.
     """)
-    return
 
 
 @app.cell
 def _(mo):
-    l_freq_ui = mo.ui.slider(start=0.5, stop=20.0, step=0.5, value=8.0, label="Low Cutoff (Hz)")
-    h_freq_ui = mo.ui.slider(start=15.0, stop=60.0, step=1.0, value=30.0, label="High Cutoff (Hz)")
+    l_freq_ui = mo.ui.slider(
+        start=0.5, stop=20.0, step=0.5, value=8.0, label="Low Cutoff (Hz)"
+    )
+    h_freq_ui = mo.ui.slider(
+        start=15.0, stop=60.0, step=1.0, value=30.0, label="High Cutoff (Hz)"
+    )
     fir_window_ui = mo.ui.dropdown(
         options=["hamming", "hann", "blackman"],
         value="hamming",
@@ -222,13 +223,14 @@ def _(mo):
     - **`T1`** (green): Task 1 (e.g. Left fist / Both fists)
     - **`T2`** (orange): Task 2 (e.g. Right fist / Both feet)
     """)
-    return
 
 
 @app.cell
 def _(mo, raw):
     _max_t = max(0, int(raw.times[-1] - 5))
-    start_time_ui = mo.ui.slider(start=0, stop=_max_t, step=1, value=0, label="Start Time (s)")
+    start_time_ui = mo.ui.slider(
+        start=0, stop=_max_t, step=1, value=0, label="Start Time (s)"
+    )
     duration_ui = mo.ui.slider(start=2, stop=30, step=1, value=10, label="Window (s)")
     _motor_ch = [ch for ch in ["C3", "Cz", "C4"] if ch in raw.ch_names]
     channel_ui = mo.ui.multiselect(
@@ -236,10 +238,12 @@ def _(mo, raw):
         value=_motor_ch if _motor_ch else raw.ch_names[:3],
         label="Channels to Compare",
     )
-    mo.vstack([
-        mo.hstack([start_time_ui, duration_ui], justify="start", gap=2),
-        channel_ui,
-    ])
+    mo.vstack(
+        [
+            mo.hstack([start_time_ui, duration_ui], justify="start", gap=2),
+            channel_ui,
+        ]
+    )
     return channel_ui, duration_ui, start_time_ui
 
 
@@ -248,7 +252,13 @@ def _(channel_ui, duration_ui, np, plt, raw, raw_filtered, start_time_ui):
     _picks = channel_ui.value
     if not _picks:
         fig_time = plt.figure(figsize=(8, 2))
-        plt.text(0.5, 0.5, "Select at least one channel above to visualize", ha="center", va="center")
+        plt.text(
+            0.5,
+            0.5,
+            "Select at least one channel above to visualize",
+            ha="center",
+            va="center",
+        )
         plt.axis("off")
     else:
         _t_start = float(start_time_ui.value)
@@ -260,7 +270,9 @@ def _(channel_ui, duration_ui, np, plt, raw, raw_filtered, start_time_ui):
         _filt_data, _ = raw_filtered[_picks, _s_idx:_e_idx]
 
         _n_ch = len(_picks)
-        fig_time, _axes = plt.subplots(_n_ch, 2, figsize=(14, max(3.0, 2.2 * _n_ch)), sharex=True)
+        fig_time, _axes = plt.subplots(
+            _n_ch, 2, figsize=(14, max(3.0, 2.2 * _n_ch)), sharex=True
+        )
         if _n_ch == 1:
             _axes = np.array([_axes])
 
@@ -268,17 +280,25 @@ def _(channel_ui, duration_ui, np, plt, raw, raw_filtered, start_time_ui):
 
         for _i, _ch in enumerate(_picks):
             # Raw trace
-            _axes[_i, 0].plot(_times_slice, _raw_data[_i] * 1e6, color="#1f77b4", lw=0.9)
+            _axes[_i, 0].plot(
+                _times_slice, _raw_data[_i] * 1e6, color="#1f77b4", lw=0.9
+            )
             _axes[_i, 0].set_ylabel(f"{_ch} (µV)", fontweight="bold")
             _axes[_i, 0].grid(True, linestyle=":", alpha=0.6)
             if _i == 0:
-                _axes[_i, 0].set_title("Raw Signal (Unfiltered)", fontsize=11, fontweight="bold")
+                _axes[_i, 0].set_title(
+                    "Raw Signal (Unfiltered)", fontsize=11, fontweight="bold"
+                )
 
             # Filtered trace
-            _axes[_i, 1].plot(_times_slice, _filt_data[_i] * 1e6, color="#d62728", lw=0.9)
+            _axes[_i, 1].plot(
+                _times_slice, _filt_data[_i] * 1e6, color="#d62728", lw=0.9
+            )
             _axes[_i, 1].grid(True, linestyle=":", alpha=0.6)
             if _i == 0:
-                _axes[_i, 1].set_title("Filtered Signal (8–30 Hz)", fontsize=11, fontweight="bold")
+                _axes[_i, 1].set_title(
+                    "Filtered Signal (8–30 Hz)", fontsize=11, fontweight="bold"
+                )
 
             # Overlap event annotations
             for _ax in (_axes[_i, 0], _axes[_i, 1]):
@@ -288,17 +308,34 @@ def _(channel_ui, duration_ui, np, plt, raw, raw_filtered, start_time_ui):
                     _desc = _annot["description"]
                     if (_onset + _dur >= _t_start) and (_onset <= _t_end):
                         _col = _event_colors.get(_desc, "#9467bd")
-                        _ax.axvspan(max(_onset, _t_start), min(_onset + _dur, _t_end), color=_col, alpha=0.15)
-                        _ax.axvline(_onset, color=_col, linestyle="--", alpha=0.7, lw=1.0)
+                        _ax.axvspan(
+                            max(_onset, _t_start),
+                            min(_onset + _dur, _t_end),
+                            color=_col,
+                            alpha=0.15,
+                        )
+                        _ax.axvline(
+                            _onset, color=_col, linestyle="--", alpha=0.7, lw=1.0
+                        )
                         _ylims = _ax.get_ylim()
-                        _ax.text(_onset + 0.05, _ylims[1] * 0.75, _desc, color=_col, fontweight="bold", fontsize=8)
+                        _ax.text(
+                            _onset + 0.05,
+                            _ylims[1] * 0.75,
+                            _desc,
+                            color=_col,
+                            fontweight="bold",
+                            fontsize=8,
+                        )
 
         _axes[-1, 0].set_xlabel("Time (s)")
         _axes[-1, 1].set_xlabel("Time (s)")
-        fig_time.suptitle(f"Time-Domain Comparison ({_t_start:.1f}s – {_t_end:.1f}s)", fontsize=12, fontweight="bold")
+        fig_time.suptitle(
+            f"Time-Domain Comparison ({_t_start:.1f}s – {_t_end:.1f}s)",
+            fontsize=12,
+            fontweight="bold",
+        )
         plt.tight_layout()
         plt.show()
-    return
 
 
 @app.cell(hide_code=True)
@@ -311,61 +348,15 @@ def _(mo):
     Instead of looking at the signal over time, **Fourier Transform (FFT)** is used to measure how much power exists at each frequency (from 0 to 80 Hz):
 
     * **Power Spectral Density (PSD):** Shows how "loud" each frequency is in the EEG.
-    * **Welch’s Averaging:** Slices the recording into short, smoothed chunks (using a Hann window) and averages them together to eliminate random noise.
+    * **Welch’s Averaging:** Slices the recording into short, smoothed chunks (using a Hann window) and averages their Fourier spectra together to eliminate random noise.
     * **Objective:**
         1. Visually verify that the filter successfully suppressed unwanted frequencies (< 8 Hz and > 30 Hz).
-        2. Extract the power of the motor rhythms ($\mu$ and $\beta$) to use as classification features.
+        2. Inspect the power of the motor rhythms ($\mu$ and $\beta$) across the spectrum.
     """)
-    return
 
 
 @app.cell
-def _(np):
-    def welch_psd_numpy(data, sfreq=160.0, n_per_seg=256, n_overlap=128):
-        """Compute single-sided Welch PSD from scratch using NumPy FFT.
-
-        Parameters:
-            data: array of shape (n_channels, n_samples)
-            sfreq: sampling frequency (Hz)
-            n_per_seg: samples per windowed segment (e.g. 256 samples @ 160 Hz = 1.6s)
-            n_overlap: samples overlap between consecutive segments (50% overlap)
-
-        Returns:
-            freqs: 1D array of frequency bins
-            psd: array of shape (n_channels, n_freqs) in V^2 / Hz
-        """
-        n_channels, n_samples = data.shape
-        step = n_per_seg - n_overlap
-        n_segments = max(1, (n_samples - n_overlap) // step)
-
-        # Hann window
-        window = 0.5 * (1.0 - np.cos(2.0 * np.pi * np.arange(n_per_seg) / n_per_seg))
-        win_energy = np.sum(window**2)
-
-        # Frequency bins for real FFT
-        freqs = np.fft.rfftfreq(n_per_seg, d=1.0 / sfreq)
-        psd = np.zeros((n_channels, len(freqs)), dtype=np.float64)
-
-        for seg_idx in range(n_segments):
-            start = seg_idx * step
-            end = start + n_per_seg
-            if end > n_samples:
-                break
-            chunk = data[:, start:end] * window[np.newaxis, :]
-            fft_vals = np.fft.rfft(chunk, n=n_per_seg, axis=-1)
-            power = (np.abs(fft_vals) ** 2) / (sfreq * win_energy)
-            # Multiply non-DC and non-Nyquist frequencies by 2 for single-sided spectrum
-            power[:, 1:-1] *= 2.0
-            psd += power
-
-        psd /= n_segments
-        return freqs, psd
-
-    return (welch_psd_numpy,)
-
-
-@app.cell
-def _(channel_ui, h_freq, l_freq, np, plt, raw, raw_filtered, welch_psd_numpy):
+def _(channel_ui, h_freq, l_freq, np, plt, raw, raw_filtered):
     _picks = channel_ui.value
     if not _picks:
         fig_psd = plt.figure(figsize=(8, 2))
@@ -373,14 +364,30 @@ def _(channel_ui, h_freq, l_freq, np, plt, raw, raw_filtered, welch_psd_numpy):
         plt.axis("off")
     else:
         _sfreq = raw.info["sfreq"]
-        _raw_sig, _ = raw[_picks, :]
-        _filt_sig, _ = raw_filtered[_picks, :]
+        _spec_raw = raw.compute_psd(
+            method="welch",
+            picks=_picks,
+            fmin=0.0,
+            fmax=_sfreq / 2,
+            n_fft=256,
+            verbose=False,
+        )
+        _spec_filt = raw_filtered.compute_psd(
+            method="welch",
+            picks=_picks,
+            fmin=0.0,
+            fmax=_sfreq / 2,
+            n_fft=256,
+            verbose=False,
+        )
 
-        _freqs, _psd_raw = welch_psd_numpy(_raw_sig, sfreq=_sfreq, n_per_seg=256, n_overlap=128)
-        _, _psd_filt = welch_psd_numpy(_filt_sig, sfreq=_sfreq, n_per_seg=256, n_overlap=128)
+        _psd_raw, _freqs = _spec_raw.get_data(return_freqs=True)
+        _psd_filt, _ = _spec_filt.get_data(return_freqs=True)
 
         _n_ch = len(_picks)
-        fig_psd, _axes = plt.subplots(1, _n_ch, figsize=(max(6.0, 5.0 * _n_ch), 4.5), sharey=True)
+        fig_psd, _axes = plt.subplots(
+            1, _n_ch, figsize=(max(6.0, 5.0 * _n_ch), 4.5), sharey=True
+        )
         if _n_ch == 1:
             _axes = [_axes]
 
@@ -390,15 +397,36 @@ def _(channel_ui, h_freq, l_freq, np, plt, raw, raw_filtered, welch_psd_numpy):
             _p_raw_db = 10 * np.log10(np.maximum(_psd_raw[_i] * 1e12, 1e-12))
             _p_filt_db = 10 * np.log10(np.maximum(_psd_filt[_i] * 1e12, 1e-12))
 
-            _ax.plot(_freqs, _p_raw_db, label="Raw (Unfiltered)", color="#1f77b4", lw=1.5, alpha=0.75)
-            _ax.plot(_freqs, _p_filt_db, label=f"Filtered ({l_freq:.0f}–{h_freq:.0f} Hz)", color="#d62728", lw=1.8)
+            _ax.plot(
+                _freqs,
+                _p_raw_db,
+                label="Raw (Unfiltered)",
+                color="#1f77b4",
+                lw=1.5,
+                alpha=0.75,
+            )
+            _ax.plot(
+                _freqs,
+                _p_filt_db,
+                label=f"Filtered ({l_freq:.0f}–{h_freq:.0f} Hz)",
+                color="#d62728",
+                lw=1.8,
+            )
 
             # Shaded passband and sub-bands
-            _ax.axvspan(l_freq, h_freq, color="gold", alpha=0.15, label=f"Passband [{l_freq:.0f}–{h_freq:.0f} Hz]")
+            _ax.axvspan(
+                l_freq,
+                h_freq,
+                color="gold",
+                alpha=0.15,
+                label=f"Passband [{l_freq:.0f}–{h_freq:.0f} Hz]",
+            )
             _ax.axvspan(8.0, 12.0, color="green", alpha=0.10, label="Mu (8–12 Hz)")
             _ax.axvspan(13.0, 30.0, color="orange", alpha=0.08, label="Beta (13–30 Hz)")
 
-            _ax.set_title(f"Channel {_ch} - Power Spectrum", fontweight="bold", fontsize=11)
+            _ax.set_title(
+                f"Channel {_ch} - Power Spectrum", fontweight="bold", fontsize=11
+            )
             _ax.set_xlabel("Frequency (Hz)")
             if _i == 0:
                 _ax.set_ylabel("PSD (dB / µV²/Hz)")
@@ -406,10 +434,11 @@ def _(channel_ui, h_freq, l_freq, np, plt, raw, raw_filtered, welch_psd_numpy):
             _ax.grid(True, linestyle=":", alpha=0.6)
             _ax.legend(fontsize=8, loc="upper right")
 
-        fig_psd.suptitle("Frequency Domain Comparison (NumPy Welch PSD via FFT)", fontsize=12, fontweight="bold")
+        fig_psd.suptitle(
+            "Frequency Domain Comparison (Welch PSD)", fontsize=12, fontweight="bold"
+        )
         plt.tight_layout()
         plt.show()
-    return
 
 
 @app.cell(hide_code=True)
@@ -430,13 +459,16 @@ def _(mo):
 
     > **Result:** Turns the continuous 2-minute recording into ~15 labeled trial blocks ready to be fed into a classification pipeline.
     """)
-    return
 
 
 @app.cell
 def _(mo):
-    tmin_ui = mo.ui.slider(start=-1.0, stop=0.5, step=0.1, value=0.0, label="t_min (s relative to cue)")
-    tmax_ui = mo.ui.slider(start=1.0, stop=4.5, step=0.1, value=4.0, label="t_max (s relative to cue)")
+    tmin_ui = mo.ui.slider(
+        start=-1.0, stop=0.5, step=0.1, value=0.0, label="t_min (s relative to cue)"
+    )
+    tmax_ui = mo.ui.slider(
+        start=1.0, stop=4.5, step=0.1, value=4.0, label="t_max (s relative to cue)"
+    )
     mo.hstack([tmin_ui, tmax_ui], justify="start", gap=2)
     return tmax_ui, tmin_ui
 
@@ -468,7 +500,7 @@ def _(mne, mo, raw_filtered, tmax_ui, tmin_ui):
     **Extracted Epochs Summary:**
     - **Total Trials:** {len(epochs)} (T1: {_n_t1}, T2: {_n_t2})
     - **Data Matrix Shape:** `{_data_shape}` $\\to$ *(trials, channels, timepoints)*
-    - **Sampling Rate:** `{epochs.info['sfreq']:.0f} Hz` ({_data_shape[2]} samples per trial)
+    - **Sampling Rate:** `{epochs.info["sfreq"]:.0f} Hz` ({_data_shape[2]} samples per trial)
     """)
     return (epochs,)
 
@@ -484,7 +516,6 @@ def _(mo):
     **Observation:**
     The two heat maps look almost indistinguishable. Background rhythms dominate, and the task difference is too small to spot with the naked eye. This visual similarity provides the direct justification for using machine learning algorithms (like CSP) rather than visual inspection to decode movement thoughts.
     """)
-    return
 
 
 @app.cell
@@ -494,7 +525,7 @@ def _(mo):
         value="Mu Band (8–12 Hz)",
         label="Select Frequency Band",
     )
-    band_choice_ui
+    mo.hstack([band_choice_ui])
     return (band_choice_ui,)
 
 
@@ -505,8 +536,12 @@ def _(band_choice_ui, epochs, np, plot_topomap, plt):
     _has_t2 = "T2" in epochs.event_id and len(epochs["T2"]) > 0
 
     if _has_t1 and _has_t2:
-        _spec_t1 = epochs["T1"].compute_psd(method="welch", fmin=0.5, fmax=45.0, n_fft=256, verbose=False)
-        _spec_t2 = epochs["T2"].compute_psd(method="welch", fmin=0.5, fmax=45.0, n_fft=256, verbose=False)
+        _spec_t1 = epochs["T1"].compute_psd(
+            method="welch", fmin=0.5, fmax=45.0, n_fft=256, verbose=False
+        )
+        _spec_t2 = epochs["T2"].compute_psd(
+            method="welch", fmin=0.5, fmax=45.0, n_fft=256, verbose=False
+        )
 
         _psds_t1, _freqs = _spec_t1.get_data(return_freqs=True)
         _psds_t2, _ = _spec_t2.get_data(return_freqs=True)
@@ -516,7 +551,11 @@ def _(band_choice_ui, epochs, np, plot_topomap, plt):
 
         _is_mu = "Mu" in band_choice_ui.value
         _band_name = "Mu (8–12 Hz)" if _is_mu else "Beta (13–30 Hz)"
-        _mask = (_freqs >= 8.0) & (_freqs <= 12.0) if _is_mu else (_freqs >= 13.0) & (_freqs <= 30.0)
+        _mask = (
+            (_freqs >= 8.0) & (_freqs <= 12.0)
+            if _is_mu
+            else (_freqs >= 13.0) & (_freqs <= 30.0)
+        )
 
         _power_t1 = np.mean(_mean_t1[:, _mask], axis=-1)
         _power_t2 = np.mean(_mean_t2[:, _mask], axis=-1)
@@ -537,8 +576,17 @@ def _(band_choice_ui, epochs, np, plot_topomap, plt):
             vlim=(_vmin, _vmax),
             show=False,
         )
-        _ax1.set_title(f"Task 1: Left Fist (T1) — {_band_name}", fontsize=11, fontweight="bold")
-        plt.colorbar(_im1, ax=_ax1, orientation="horizontal", pad=0.08, shrink=0.7, label="Power (dB / µV²/Hz)")
+        _ax1.set_title(
+            f"Task 1: Left Fist (T1) — {_band_name}", fontsize=11, fontweight="bold"
+        )
+        plt.colorbar(
+            _im1,
+            ax=_ax1,
+            orientation="horizontal",
+            pad=0.08,
+            shrink=0.7,
+            label="Power (dB / µV²/Hz)",
+        )
 
         _ax2 = plt.subplot(1, 2, 2)
         _im2, _ = plot_topomap(
@@ -549,16 +597,33 @@ def _(band_choice_ui, epochs, np, plot_topomap, plt):
             vlim=(_vmin, _vmax),
             show=False,
         )
-        _ax2.set_title(f"Task 2: Right Fist (T2) — {_band_name}", fontsize=11, fontweight="bold")
-        plt.colorbar(_im2, ax=_ax2, orientation="horizontal", pad=0.08, shrink=0.7, label="Power (dB / µV²/Hz)")
+        _ax2.set_title(
+            f"Task 2: Right Fist (T2) — {_band_name}", fontsize=11, fontweight="bold"
+        )
+        plt.colorbar(
+            _im2,
+            ax=_ax2,
+            orientation="horizontal",
+            pad=0.08,
+            shrink=0.7,
+            label="Power (dB / µV²/Hz)",
+        )
 
-        fig_topo.suptitle(f"Task-Specific Scalp Topography ({_band_name})", fontsize=12, fontweight="bold")
+        fig_topo.suptitle(
+            f"Task-Specific Scalp Topography ({_band_name})",
+            fontsize=12,
+            fontweight="bold",
+        )
         plt.tight_layout()
         plt.show()
     else:
-        plt.text(0.5, 0.5, "Both T1 and T2 trials required for task comparison topomap", ha="center")
+        plt.text(
+            0.5,
+            0.5,
+            "Both T1 and T2 trials required for task comparison topomap",
+            ha="center",
+        )
         plt.axis("off")
-    return
 
 
 @app.cell(hide_code=True)
@@ -573,12 +638,11 @@ def _(mo):
 
     The curves below compare the power across frequencies for both electrodes during both tasks. The difference between the lines is very subtle and why we need machine learning rather than visual inspection to decode movement thoughts.
     """)
-    return
 
 
 @app.cell
 def _(epochs, np, plt):
-    fig_erd = plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(10, 4))
     _has_t1 = "T1" in epochs.event_id and len(epochs["T1"]) > 0
     _has_t2 = "T2" in epochs.event_id and len(epochs["T2"]) > 0
     _has_ch = ("C3" in epochs.ch_names) and ("C4" in epochs.ch_names)
@@ -588,18 +652,34 @@ def _(epochs, np, plt):
         _c4_idx = epochs.ch_names.index("C4")
 
         # Average PSD for T1
-        _spec_t1 = epochs["T1"].compute_psd(method="welch", fmin=4.0, fmax=35.0, n_fft=256, verbose=False)
+        _spec_t1 = epochs["T1"].compute_psd(
+            method="welch", fmin=4.0, fmax=35.0, n_fft=256, verbose=False
+        )
         _psd_t1, _f_erd = _spec_t1.get_data(return_freqs=True)
         _mean_t1 = np.mean(_psd_t1, axis=0)
 
         # Average PSD for T2
-        _spec_t2 = epochs["T2"].compute_psd(method="welch", fmin=4.0, fmax=35.0, n_fft=256, verbose=False)
+        _spec_t2 = epochs["T2"].compute_psd(
+            method="welch", fmin=4.0, fmax=35.0, n_fft=256, verbose=False
+        )
         _psd_t2, _ = _spec_t2.get_data(return_freqs=True)
         _mean_t2 = np.mean(_psd_t2, axis=0)
 
         _ax_c3 = plt.subplot(1, 2, 1)
-        _ax_c3.plot(_f_erd, 10 * np.log10(_mean_t1[_c3_idx] * 1e12), label="T1 (Left)", color="#2ca02c", lw=2)
-        _ax_c3.plot(_f_erd, 10 * np.log10(_mean_t2[_c3_idx] * 1e12), label="T2 (Right)", color="#ff7f0e", lw=2)
+        _ax_c3.plot(
+            _f_erd,
+            10 * np.log10(_mean_t1[_c3_idx] * 1e12),
+            label="T1 (Left)",
+            color="#2ca02c",
+            lw=2,
+        )
+        _ax_c3.plot(
+            _f_erd,
+            10 * np.log10(_mean_t2[_c3_idx] * 1e12),
+            label="T2 (Right)",
+            color="#ff7f0e",
+            lw=2,
+        )
         _ax_c3.axvspan(8, 12, color="gray", alpha=0.15, label="Mu band")
         _ax_c3.axvspan(13, 30, color="gray", alpha=0.08, label="Beta band")
         _ax_c3.set_title("Electrode C3 (Left Motor Cortex)", fontweight="bold")
@@ -609,8 +689,20 @@ def _(epochs, np, plt):
         _ax_c3.legend(fontsize=8)
 
         _ax_c4 = plt.subplot(1, 2, 2)
-        _ax_c4.plot(_f_erd, 10 * np.log10(_mean_t1[_c4_idx] * 1e12), label="T1 (Left)", color="#2ca02c", lw=2)
-        _ax_c4.plot(_f_erd, 10 * np.log10(_mean_t2[_c4_idx] * 1e12), label="T2 (Right)", color="#ff7f0e", lw=2)
+        _ax_c4.plot(
+            _f_erd,
+            10 * np.log10(_mean_t1[_c4_idx] * 1e12),
+            label="T1 (Left)",
+            color="#2ca02c",
+            lw=2,
+        )
+        _ax_c4.plot(
+            _f_erd,
+            10 * np.log10(_mean_t2[_c4_idx] * 1e12),
+            label="T2 (Right)",
+            color="#ff7f0e",
+            lw=2,
+        )
         _ax_c4.axvspan(8, 12, color="gray", alpha=0.15, label="Mu band")
         _ax_c4.axvspan(13, 30, color="gray", alpha=0.08, label="Beta band")
         _ax_c4.set_title("Electrode C4 (Right Motor Cortex)", fontweight="bold")
@@ -618,13 +710,21 @@ def _(epochs, np, plt):
         _ax_c4.grid(True, linestyle=":", alpha=0.6)
         _ax_c4.legend(fontsize=8)
 
-        plt.suptitle("Class Power Difference (T1 vs. T2) across Sensorimotor Electrodes", fontsize=11, fontweight="bold")
+        plt.suptitle(
+            "Class Power Difference (T1 vs. T2) across Sensorimotor Electrodes",
+            fontsize=11,
+            fontweight="bold",
+        )
         plt.tight_layout()
         plt.show()
     else:
-        plt.text(0.5, 0.5, "Both T1 and T2 trials with C3/C4 needed for contrast plot", ha="center")
+        plt.text(
+            0.5,
+            0.5,
+            "Both T1 and T2 trials with C3/C4 needed for contrast plot",
+            ha="center",
+        )
         plt.axis("off")
-    return
 
 
 if __name__ == "__main__":
