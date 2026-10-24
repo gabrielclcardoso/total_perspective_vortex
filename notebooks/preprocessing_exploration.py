@@ -21,6 +21,7 @@ def _(mo):
     6. **Task-Specific Scalp Topography:** Mapping 2D head maps of $\mu$ and $\beta$ power during Task 1 vs. Task 2 on a shared scale, demonstrating that visual differences are too subtle to detect with the naked eye.
     7. **Left vs. Right Brain Response ($C3$ vs. $C4$ Spectra):** Inspecting the primary motor sensors to examine contralateral power drops, proving why machine learning (Phase 2: CSP) is necessary to decode movement thoughts.
     """)
+    return
 
 
 @app.cell
@@ -65,6 +66,7 @@ def _(mo):
     ## Subject & Task Selection
     Select any of the 109 PhysioNet subjects and one of the 14 experimental runs.
     """)
+    return
 
 
 @app.cell
@@ -149,11 +151,13 @@ def _(mo):
     - **Cz**: Midline sensorimotor cortex (contralateral to feet)
     - Surrounding motor references: **FC3, FC4, CP3, CP4**
     """)
+    return
 
 
 @app.cell
 def _(raw):
-    raw.plot_sensors(show_names=True, kind="topomap")
+    raw.plot_sensors(show_names=True, kind="topomap", show=False)
+    return
 
 
 @app.cell(hide_code=True)
@@ -175,6 +179,7 @@ def _(mo):
 
     > **In short:** The 8–30 Hz filter keeps the brain waves that reflect motor thoughts and throws away eye blinks, muscle twitches, and electrical hum.
     """)
+    return
 
 
 @app.cell
@@ -223,6 +228,7 @@ def _(mo):
     - **`T1`** (green): Task 1 (e.g. Left fist / Both fists)
     - **`T2`** (orange): Task 2 (e.g. Right fist / Both feet)
     """)
+    return
 
 
 @app.cell
@@ -336,6 +342,7 @@ def _(channel_ui, duration_ui, np, plt, raw, raw_filtered, start_time_ui):
         )
         plt.tight_layout()
         plt.show()
+    return
 
 
 @app.cell(hide_code=True)
@@ -353,6 +360,7 @@ def _(mo):
         1. Visually verify that the filter successfully suppressed unwanted frequencies (< 8 Hz and > 30 Hz).
         2. Inspect the power of the motor rhythms ($\mu$ and $\beta$) across the spectrum.
     """)
+    return
 
 
 @app.cell
@@ -439,6 +447,7 @@ def _(channel_ui, h_freq, l_freq, np, plt, raw, raw_filtered):
         )
         plt.tight_layout()
         plt.show()
+    return
 
 
 @app.cell(hide_code=True)
@@ -459,6 +468,7 @@ def _(mo):
 
     > **Result:** Turns the continuous 2-minute recording into ~15 labeled trial blocks ready to be fed into a classification pipeline.
     """)
+    return
 
 
 @app.cell
@@ -516,6 +526,7 @@ def _(mo):
     **Observation:**
     The two heat maps look almost indistinguishable. Background rhythms dominate, and the task difference is too small to spot with the naked eye. This visual similarity provides the direct justification for using machine learning algorithms (like CSP) rather than visual inspection to decode movement thoughts.
     """)
+    return
 
 
 @app.cell
@@ -624,6 +635,7 @@ def _(band_choice_ui, epochs, np, plot_topomap, plt):
             ha="center",
         )
         plt.axis("off")
+    return
 
 
 @app.cell(hide_code=True)
@@ -638,6 +650,7 @@ def _(mo):
 
     The curves below compare the power across frequencies for both electrodes during both tasks. The difference between the lines is very subtle and why we need machine learning rather than visual inspection to decode movement thoughts.
     """)
+    return
 
 
 @app.cell
@@ -725,6 +738,7 @@ def _(epochs, np, plt):
             ha="center",
         )
         plt.axis("off")
+    return
 
 
 if __name__ == "__main__":
